@@ -7,7 +7,7 @@ export default function LikeSection({ id }) {
   const [likesCount, setLikesCount] = useState(0);
   const [socket, setSocket] = useState(null);
   const { data: session } = useSession();
-  const [hasLiked, setHasLiked] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false); // Initialize hasLiked state
 
   useEffect(() => {
     // Create a new socket instance and connect to the server
@@ -41,6 +41,16 @@ export default function LikeSection({ id }) {
       }
     };
   }, [id, socket]);
+
+  useEffect(() => {
+    // Update hasLiked state based on whether the user has already liked the post
+    if (session) {
+      // Check if the user has already liked the post
+      // You may need to fetch this information from your backend or from local storage
+      const userLiked = false; // Change this to fetch the user's liked status for the post
+      setHasLiked(userLiked);
+    }
+  }, [session]); // Update hasLiked when session changes
 
   const likePost = () => {
     // Toggle hasLiked state
