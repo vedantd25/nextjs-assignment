@@ -104,7 +104,7 @@ export default function CommentSection({ id }) {
         </form>
       )}
       {/* Display the comment count */}
-      <p className='text-gray-500'>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</p>
+      <p className='text-gray-500' style={{ paddingLeft: '15px',paddingBottom:'15px' }}>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</p>
     </div>
   );
 }
