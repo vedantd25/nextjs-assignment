@@ -1,48 +1,56 @@
-'use client';
-
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getFirestore,
-  onSnapshot,
-  setDoc,
-} from 'firebase/firestore';
-import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
+import { useSession } from 'next-auth/react';
 import { HiOutlineHeart, HiHeart } from 'react-icons/hi';
-import { app } from '../firebase';
 
 export default function LikeSection({ id }) {
+  const [likesCount, setLikesCount] = useState(0);
+  const [socket, setSocket] = useState(null);
   const { data: session } = useSession();
   const [hasLiked, setHasLiked] = useState(false);
-  const [likes, setLikes] = useState([]);
-  const db = getFirestore(app);
 
   useEffect(() => {
-    onSnapshot(collection(db, 'posts', id, 'likes'), (snapshot) => {
-      setLikes(snapshot.docs);
-    });
-  }, [db]);
+    // Create a new socket instance and connect to the server
+    const newSocket = io('http://localhost:3001', { transports: ['websocket'] });
+    setSocket(newSocket);
+
+    return () => {
+      // Disconnect from the server when the component unmounts
+      newSocket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
-    if (likes.findIndex((like) => like.id === session?.user?.uid) !== -1) {
-      setHasLiked(true);
-    } else {
-      setHasLiked(false);
-    }
-  }, [likes]);
+    if (socket) {
+      // Send request to get initial likes count when component mounts
+      socket.emit('getLikesCount', id);
 
-  async function likePost() {
-    console.log(db, id, 'likes', session?.user?.uid);
-    if (hasLiked) {
-      await deleteDoc(doc(db, 'posts', id, 'likes', session?.user?.uid));
-    } else {
-      await setDoc(doc(db, 'posts', id, 'likes', session?.user?.uid), {
-        username: session?.user?.username,
+      // Listen for likeUpdated event from server
+      socket.on('likeUpdated', ({ postId, likesCount }) => {
+        // Update likes count when received from server
+        if (postId === id) {
+          setLikesCount(likesCount);
+        }
       });
     }
-  }
+
+    return () => {
+      // Remove all event listeners when component unmounts
+      if (socket) {
+        socket.off();
+      }
+    };
+  }, [id, socket]);
+
+  const likePost = () => {
+    // Toggle hasLiked state
+    setHasLiked(!hasLiked);
+
+    // Emit like event to server
+    if (socket) {
+      socket.emit('like', id, !hasLiked);
+    }
+  };
 
   return (
     <div>
@@ -60,11 +68,8 @@ export default function LikeSection({ id }) {
                 className='cursor-pointer text-3xl  hover:scale-125 transition-transform duration-200 ease-out'
               />
             )}
-            {likes.length > 0 && (
-              <p className='text-gray-500'>
-                {likes.length} {likes.length === 1 ? 'like' : 'likes'}
-              </p>
-            )}
+            {/* Display likes count */}
+            <p className='text-gray-500'>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</p>
           </div>
         </div>
       )}

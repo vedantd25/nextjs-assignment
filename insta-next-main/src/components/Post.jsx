@@ -1,6 +1,11 @@
+// Add the "use client" pragma to the parent component of LikeSection
+// @ts-nocheck
+'use client';
+
 import { HiOutlineDotsVertical } from 'react-icons/hi';
 import LikeSection from './LikeSection';
 import CommentSection from './CommentSection';
+
 
 export default function Post({ post }) {
   return (

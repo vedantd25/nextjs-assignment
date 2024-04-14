@@ -18,7 +18,9 @@ export default function CommentSection({ id }) {
   const { data: session } = useSession();
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(0); // State to store comment count
   const db = getFirestore(app);
+
   async function handleSubmit(e) {
     e.preventDefault();
     // Add comment to firestore
@@ -33,19 +35,26 @@ export default function CommentSection({ id }) {
   }
 
   useEffect(() => {
-    onSnapshot(
+    const unsubscribeComments = onSnapshot(
       query(
         collection(db, 'posts', id, 'comments'),
         orderBy('timestamp', 'desc')
       ),
       (snapshot) => {
         setComments(snapshot.docs);
+        // Update comment count based on the number of comments
+        setCommentCount(snapshot.size);
       }
     );
-  }, [db]);
+
+    return () => {
+      unsubscribeComments();
+    };
+  }, [db, id]);
 
   return (
     <div>
+      
       {comments.length > 0 && (
         <div className='mx-10 max-h-24 overflow-y-scroll'>
           {comments.map((comment, id) => (
@@ -94,6 +103,8 @@ export default function CommentSection({ id }) {
           </button>
         </form>
       )}
+      {/* Display the comment count */}
+      <p className='text-gray-500'>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</p>
     </div>
   );
 }
